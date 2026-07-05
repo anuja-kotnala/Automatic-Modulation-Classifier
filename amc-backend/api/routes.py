@@ -3,10 +3,6 @@ import time
 import glob
 import joblib
 import numpy as np
-import pandas as pd
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from typing import List, Dict, Any, Optional
@@ -16,15 +12,6 @@ from amc.generator import *
 from amc.channel.channel_pipeline import ChannelPipeline
 from amc.config import AppConfig
 from amc.features.extractors import FeatureExtractor
-from amc.visualization import (
-    plot_constellation,
-    plot_fft,
-    plot_psd,
-    plot_waterfall,
-    plot_spectrogram,
-    plot_iq,
-    plot_eye_diagram
-)
 
 from api.schemas import (
     HealthResponse,
@@ -133,41 +120,67 @@ def get_results():
     """
     Returns unified evaluation results summary and metrics from both ML and DL models.
     """
+    import csv
     summary_data = []
+
+    def safe_float(val):
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return None
+
+    def safe_int(val):
+        try:
+            return int(val)
+        except (ValueError, TypeError):
+            return None
+
+    def is_not_na(val):
+        return val is not None and val != "" and val.lower() != "nan"
 
     # 1. Read ML summary
     ml_summary_path = os.path.join("results", "ml_eval", "model_performance_summary.csv")
     if os.path.exists(ml_summary_path):
         try:
-            df_ml = pd.read_csv(ml_summary_path)
-            for _, row in df_ml.iterrows():
-                accuracy = float(row.get("Accuracy", 0.0))
-                precision = float(row.get("Precision", 0.0))
-                recall = float(row.get("Recall", 0.0))
-                f1_score = float(row.get("F1_Score", 0.0))
-                
-                # Keep extra fields for extensibility
-                extra = {}
-                for col in df_ml.columns:
-                    if col not in ["Classifier", "Accuracy", "Precision", "Recall", "F1_Score", "CV_Mean", "CV_Std", "Macro_AUC"]:
-                        val = row[col]
-                        extra[col] = int(val) if isinstance(val, (int, np.integer)) else (float(val) if isinstance(val, (float, np.floating)) else val)
+            with open(ml_summary_path, mode="r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    accuracy = safe_float(row.get("Accuracy")) or 0.0
+                    precision = safe_float(row.get("Precision")) or 0.0
+                    recall = safe_float(row.get("Recall")) or 0.0
+                    f1_score = safe_float(row.get("F1_Score")) or 0.0
+                    
+                    # Keep extra fields for extensibility
+                    extra = {}
+                    for col, val in row.items():
+                        if col not in ["Classifier", "Accuracy", "Precision", "Recall", "F1_Score", "CV_Mean", "CV_Std", "Macro_AUC"]:
+                            try:
+                                extra[col] = int(val)
+                            except ValueError:
+                                try:
+                                    extra[col] = float(val)
+                                except ValueError:
+                                    extra[col] = val
 
-                summary_data.append({
-                    "model_name": str(row.get("Classifier", "Unknown")),
-                    "model_type": "ml",
-                    "accuracy": accuracy,
-                    "precision": precision,
-                    "recall": recall,
-                    "f1_score": f1_score,
-                    "cv_mean": float(row["CV_Mean"]) if pd.notna(row.get("CV_Mean")) else None,
-                    "cv_std": float(row["CV_Std"]) if pd.notna(row.get("CV_Std")) else None,
-                    "macro_auc": float(row["Macro_AUC"]) if pd.notna(row.get("Macro_AUC")) else None,
-                    # Fallbacks/aliases for frontend backwards compatibility
-                    "model": str(row.get("Classifier", "Unknown")),
-                    "Classifier": str(row.get("Classifier", "Unknown")),
-                    **extra
-                })
+                    cv_mean_val = row.get("CV_Mean")
+                    cv_std_val = row.get("CV_Std")
+                    macro_auc_val = row.get("Macro_AUC")
+
+                    summary_data.append({
+                        "model_name": str(row.get("Classifier", "Unknown")),
+                        "model_type": "ml",
+                        "accuracy": accuracy,
+                        "precision": precision,
+                        "recall": recall,
+                        "f1_score": f1_score,
+                        "cv_mean": safe_float(cv_mean_val) if is_not_na(cv_mean_val) else None,
+                        "cv_std": safe_float(cv_std_val) if is_not_na(cv_std_val) else None,
+                        "macro_auc": safe_float(macro_auc_val) if is_not_na(macro_auc_val) else None,
+                        # Fallbacks/aliases for frontend backwards compatibility
+                        "model": str(row.get("Classifier", "Unknown")),
+                        "Classifier": str(row.get("Classifier", "Unknown")),
+                        **extra
+                    })
         except Exception as e:
             print(f"Warning: Failed to read ML performance summary: {e}")
 
@@ -175,49 +188,69 @@ def get_results():
     dl_summary_path = os.path.join("results", "dl_eval", "dl_model_performance_summary.csv")
     if os.path.exists(dl_summary_path):
         try:
-            df_dl = pd.read_csv(dl_summary_path)
-            for _, row in df_dl.iterrows():
-                accuracy = float(row.get("Test Accuracy", 0.0))
-                precision = float(row.get("Precision", 0.0))
-                recall = float(row.get("Recall", 0.0))
-                f1_score = float(row.get("F1 Score", 0.0))
+            with open(dl_summary_path, mode="r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    accuracy = safe_float(row.get("Test Accuracy")) or 0.0
+                    precision = safe_float(row.get("Precision")) or 0.0
+                    recall = safe_float(row.get("Recall")) or 0.0
+                    f1_score = safe_float(row.get("F1 Score")) or 0.0
 
-                # Parse SNR accuracies into a dictionary
-                snr_accuracy = {}
-                for snr in [-20, -15, -10, -5, 0, 5, 10, 15, 20]:
-                    col_name = f"Acc_SNR_{snr}dB"
-                    if col_name in row:
-                        val = row[col_name]
-                        if pd.notna(val):
-                            snr_accuracy[str(snr)] = float(val)
+                    # Parse SNR accuracies into a dictionary
+                    snr_accuracy = {}
+                    for snr in [-20, -15, -10, -5, 0, 5, 10, 15, 20]:
+                        col_name = f"Acc_SNR_{snr}dB"
+                        if col_name in row:
+                            val = row[col_name]
+                            if is_not_na(val):
+                                snr_accuracy[str(snr)] = safe_float(val)
 
-                # Keep extra fields for extensibility
-                extra = {}
-                for col in df_dl.columns:
-                    if col not in ["Model", "Test Accuracy", "Precision", "Recall", "F1 Score", "Parameters", "Training Time (s)", "Avg Epoch Time (s)", "Model Size (MB)", "Best Val Acc", "Best Val Loss", "Avg Inference Time/Sample (ms)"] and not col.startswith("Acc_SNR_"):
-                        val = row[col]
-                        extra[col] = int(val) if isinstance(val, (int, np.integer)) else (float(val) if isinstance(val, (float, np.floating)) else val)
+                    # Keep extra fields for extensibility
+                    extra = {}
+                    exclude_cols = [
+                        "Model", "Test Accuracy", "Precision", "Recall", "F1 Score", 
+                        "Parameters", "Training Time (s)", "Avg Epoch Time (s)", 
+                        "Model Size (MB)", "Best Val Acc", "Best Val Loss", 
+                        "Avg Inference Time/Sample (ms)"
+                    ]
+                    for col, val in row.items():
+                        if col not in exclude_cols and not col.startswith("Acc_SNR_"):
+                            try:
+                                extra[col] = int(val)
+                            except ValueError:
+                                try:
+                                    extra[col] = float(val)
+                                except ValueError:
+                                    extra[col] = val
 
-                summary_data.append({
-                    "model_name": str(row.get("Model", "Unknown")),
-                    "model_type": "dl",
-                    "accuracy": accuracy,
-                    "precision": precision,
-                    "recall": recall,
-                    "f1_score": f1_score,
-                    "parameters": int(row["Parameters"]) if pd.notna(row.get("Parameters")) else None,
-                    "training_time": float(row["Training Time (s)"]) if pd.notna(row.get("Training Time (s)")) else None,
-                    "avg_epoch_time": float(row["Avg Epoch Time (s)"]) if pd.notna(row.get("Avg Epoch Time (s)")) else None,
-                    "model_size_mb": float(row["Model Size (MB)"]) if pd.notna(row.get("Model Size (MB)")) else None,
-                    "best_val_accuracy": float(row["Best Val Acc"]) if pd.notna(row.get("Best Val Acc")) else None,
-                    "best_val_loss": float(row["Best Val Loss"]) if pd.notna(row.get("Best Val Loss")) else None,
-                    "inference_time_ms": float(row["Avg Inference Time/Sample (ms)"]) if pd.notna(row.get("Avg Inference Time/Sample (ms)")) else None,
-                    "snr_accuracy": snr_accuracy if snr_accuracy else None,
-                    # Fallbacks/aliases for frontend backwards compatibility
-                    "model": str(row.get("Model", "Unknown")),
-                    "Classifier": str(row.get("Model", "Unknown")),
-                    **extra
-                })
+                    params_val = row.get("Parameters")
+                    train_time_val = row.get("Training Time (s)")
+                    epoch_time_val = row.get("Avg Epoch Time (s)")
+                    size_val = row.get("Model Size (MB)")
+                    val_acc_val = row.get("Best Val Acc")
+                    val_loss_val = row.get("Best Val Loss")
+                    inf_time_val = row.get("Avg Inference Time/Sample (ms)")
+
+                    summary_data.append({
+                        "model_name": str(row.get("Model", "Unknown")),
+                        "model_type": "dl",
+                        "accuracy": accuracy,
+                        "precision": precision,
+                        "recall": recall,
+                        "f1_score": f1_score,
+                        "parameters": safe_int(params_val) if is_not_na(params_val) else None,
+                        "training_time": safe_float(train_time_val) if is_not_na(train_time_val) else None,
+                        "avg_epoch_time": safe_float(epoch_time_val) if is_not_na(epoch_time_val) else None,
+                        "model_size_mb": safe_float(size_val) if is_not_na(size_val) else None,
+                        "best_val_accuracy": safe_float(val_acc_val) if is_not_na(val_acc_val) else None,
+                        "best_val_loss": safe_float(val_loss_val) if is_not_na(val_loss_val) else None,
+                        "inference_time_ms": safe_float(inf_time_val) if is_not_na(inf_time_val) else None,
+                        "snr_accuracy": snr_accuracy if snr_accuracy else None,
+                        # Fallbacks/aliases for frontend backwards compatibility
+                        "model": str(row.get("Model", "Unknown")),
+                        "Classifier": str(row.get("Model", "Unknown")),
+                        **extra
+                    })
         except Exception as e:
             print(f"Warning: Failed to read DL performance summary: {e}")
 
@@ -489,6 +522,18 @@ def generate_signal_plots(request: GeneratePlotsRequest):
     """
     Renders signal charts and figures and saves them under results/plots.
     """
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from amc.visualization import (
+        plot_constellation,
+        plot_fft,
+        plot_psd,
+        plot_waterfall,
+        plot_spectrogram,
+        plot_iq,
+        plot_eye_diagram
+    )
     # 1. Resolve signal data
     signal = None
     if request.file_path:

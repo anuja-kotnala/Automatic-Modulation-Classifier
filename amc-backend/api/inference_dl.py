@@ -5,9 +5,7 @@ import torch.nn as nn
 import numpy as np
 from scipy.signal import spectrogram
 
-# Add root folder to sys.path to ensure train_dl can be imported
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from train_dl import CNN1D, CNNLSTM, CNN2D
+from amc.core.models_dl import CNN1D, CNNLSTM, CNN2D
 
 MODELS_DL_DIR = os.path.join("results", "models", "dl")
 
@@ -18,50 +16,64 @@ class DLInferenceService:
 
     @classmethod
     def load_all_models(cls):
-        """Loads all available Deep Learning models into memory (called once at startup)."""
-        supported = ["cnn1d", "cnnlstm", "cnn2d"]
+        """No-op to save startup memory. Models are loaded lazily on demand."""
+        print("Lazy DL model loading enabled. Skipping startup load.")
+        pass
+
+    @classmethod
+    def load_model(cls, m_name: str):
+        """Loads a single DL model on demand, clearing previous models from cache."""
+        m_name = m_name.lower().strip()
+        if m_name in cls._models_cache:
+            return
+
+        # Clear existing cached models to save RAM
+        cls._models_cache.clear()
+        cls._classes_cache.clear()
+        
+        import gc
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"Initializing DL Models on {device}...")
+        checkpoint_path = os.path.join(MODELS_DL_DIR, f"best_{m_name}_raw.pth")
+        if not os.path.exists(checkpoint_path):
+            raise FileNotFoundError(f"DL model checkpoint for '{m_name}' not found at {checkpoint_path}")
 
-        for m_name in supported:
-            checkpoint_path = os.path.join(MODELS_DL_DIR, f"best_{m_name}_raw.pth")
-            if not os.path.exists(checkpoint_path):
-                print(f"Warning: DL model checkpoint for '{m_name}' not found at {checkpoint_path}. Skipping startup load.")
-                continue
+        try:
+            checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+            classes = checkpoint.get("classes", [])
+            num_classes = len(classes)
 
-            try:
-                checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
-                classes = checkpoint.get("classes", [])
-                num_classes = len(classes)
+            if num_classes == 0:
+                raise ValueError(f"Error loading {m_name}: no classes metadata found in checkpoint.")
 
-                if num_classes == 0:
-                    print(f"Error loading {m_name}: no classes metadata found in checkpoint.")
-                    continue
+            # Instantiate model
+            if m_name == "cnn1d":
+                model = CNN1D(in_channels=2, sequence_length=1024, num_classes=num_classes)
+            elif m_name == "cnnlstm":
+                model = CNNLSTM(in_channels=2, sequence_length=1024, num_classes=num_classes)
+            elif m_name == "cnn2d":
+                model = CNN2D(in_channels=2, height=64, width=31, num_classes=num_classes)
+            else:
+                raise ValueError(f"Unsupported model: {m_name}")
 
-                # Instantiate model
-                if m_name == "cnn1d":
-                    model = CNN1D(in_channels=2, sequence_length=1024, num_classes=num_classes)
-                elif m_name == "cnnlstm":
-                    model = CNNLSTM(in_channels=2, sequence_length=1024, num_classes=num_classes)
-                elif m_name == "cnn2d":
-                    model = CNN2D(in_channels=2, height=64, width=31, num_classes=num_classes)
-                else:
-                    continue
+            model.load_state_dict(checkpoint["model_state_dict"])
+            model.to(device)
+            model.eval()  # Put model into evaluation mode
 
-                model.load_state_dict(checkpoint["model_state_dict"])
-                model.to(device)
-                model.eval()  # Put model into evaluation mode
+            cls._models_cache[m_name] = model
+            cls._classes_cache[m_name] = classes
+            print(f"Successfully cached DL model '{m_name}' in memory (eval mode).")
 
-                cls._models_cache[m_name] = model
-                cls._classes_cache[m_name] = classes
-                print(f"Successfully cached DL model '{m_name}' in memory (eval mode).")
-
-            except Exception as e:
-                print(f"Failed to load DL model {m_name} at startup: {e}")
+        except Exception as e:
+            print(f"Failed to load DL model {m_name}: {e}")
+            raise e
 
     @classmethod
     def get_dl_models_status(cls) -> dict:
-        """Returns the startup load/cached status of DL models."""
+        """Returns the current cached status of DL models."""
         supported = ["cnn1d", "cnnlstm", "cnn2d"]
         return {m: (m in cls._models_cache) for m in supported}
 
@@ -112,12 +124,8 @@ class DLInferenceService:
         """Runs inference using cached models in evaluation mode."""
         m_name = model_name.lower().strip()
         
-        # Validate that the model is cached/loaded
-        if m_name not in cls._models_cache:
-            # Try to load models dynamically if not cached yet (fallback/development convenience)
-            cls.load_all_models()
-            if m_name not in cls._models_cache:
-                raise RuntimeError(f"DL Model '{m_name}' is not loaded or could not be found.")
+        # Load/cache the single active model dynamically
+        cls.load_model(m_name)
 
         model = cls._models_cache[m_name]
         classes = cls._classes_cache[m_name]

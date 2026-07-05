@@ -18,5 +18,5 @@ node_modules/
 
 # Local data & model runs
 amc-backend/runs/
-amc-backend/results/
+
 amc-backend/dataset/
