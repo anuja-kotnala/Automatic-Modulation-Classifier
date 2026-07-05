@@ -1,0 +1,75 @@
+project:
+  name: "Automatic Modulation Classification & Spectrum Analyzer"
+  version: "1.0.0"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  log_to_file: true
+  log_file_path: "logs/amc_project.log"
+
+generator:
+  sample_rate: 1000000.0  # 1 MHz
+  center_frequency: 0.0   # Baseband by default
+  samples_per_symbol: 8
+  pulse_shaping: "rrc"    # Root Raised Cosine
+  roll_off: 0.35
+  snr_range: [-10, 20]    # min, max SNR in dB
+  snr_step: 2
+  samples_per_signal: 1024
+  signals_per_modulation: 1000
+
+features:
+  fft_size: 1024
+  window_type: "hamming"
+  cumulants: [20, 21, 40, 42, 60, 63]  # C20, C21, C40, C42, C60, C63
+  wavelet_type: "db4"
+
+classifier:
+  type: "deep_learning"  # choices: "machine_learning", "deep_learning", "decision_tree"
+  model_name: "CNN1D"    # e.g., ResNet, CNN1D, LSTM, SVM, RandomForest
+  batch_size: 64
+  epochs: 50
+  learning_rate: 0.001
+  train_split: 0.8
+  random_seed: 42
+
+analyzer:
+  nfft: 1024
+  overlap: 512
+  window: "hann"
+  peak_threshold_db: -50.0
+  min_peak_distance: 10
+
+channel:
+  awgn:
+    enabled: true
+    snr_db: 20.0
+  rayleigh:
+    enabled: false
+    doppler_freq: 10.0
+  rician:
+    enabled: false
+    k_factor: 4.0
+    doppler_freq: 5.0
+  frequency_offset:
+    enabled: false
+    offset_hz: 50.0
+  phase_noise:
+    enabled: false
+    std_dev: 0.05
+  iq_imbalance:
+    enabled: false
+    amplitude_imbalance_db: 0.5
+    phase_imbalance_deg: 3.0
+  timing_offset:
+    enabled: false
+    fractional_delay: 0.25
+  multipath:
+    enabled: false
+    delays: [0.0, 1.2e-6, 2.5e-6]
+    gains_db: [0.0, -3.0, -9.0]
+  clock_drift:
+    enabled: false
+    ppm: 20.0
+

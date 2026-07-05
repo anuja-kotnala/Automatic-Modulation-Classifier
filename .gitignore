@@ -1,0 +1,22 @@
+# Python Caches & Build files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+amc-backend/tests/__pycache__/
+
+# Environments
+.env
+.venv
+venv/
+ENV/
+env/
+
+# Libraries & Dependencies
+node_modules/
+
+# Local data & model runs
+amc-backend/runs/
+amc-backend/results/
+amc-backend/dataset/
