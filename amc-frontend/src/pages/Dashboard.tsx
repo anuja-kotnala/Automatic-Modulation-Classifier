@@ -229,15 +229,18 @@ export const Dashboard: React.FC = () => {
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <Paper variant="outlined" sx={{ p: 2.5, textAlign: 'center', height: '100%' }}>
-                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: 1 }}>
-                  Models Ready
+              <Paper variant="outlined" sx={{ p: 2.5, textAlign: 'left', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  Supported Models: <Box component="span" color="primary.main" sx={{ fontWeight: 800 }}>{totalModelsCount}</Box>
                 </Typography>
-                <Typography variant="h4" color="primary" sx={{ fontWeight: 800, mt: 0.5 }}>
-                  {numModelsLoaded} / {totalModelsCount}
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Currently Loaded: <Box component="span" color="primary.main" sx={{ fontWeight: 800 }}>{numModelsLoaded}</Box>
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                  {numMlModelsLoaded}/7 ML & {numDlModelsLoaded}/3 DL Loaded
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                  ML Loaded: {numMlModelsLoaded}/7
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                  DL Loaded: {numDlModelsLoaded}/3 (Lazy Loaded)
                 </Typography>
               </Paper>
             </Grid>
