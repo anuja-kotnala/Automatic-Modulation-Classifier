@@ -73,9 +73,13 @@ class DLInferenceService:
 
     @classmethod
     def get_dl_models_status(cls) -> dict:
-        """Returns the current cached status of DL models."""
+        """Returns the availability status of DL models on disk."""
         supported = ["cnn1d", "cnnlstm", "cnn2d"]
-        return {m: (m in cls._models_cache) for m in supported}
+        status = {}
+        for m in supported:
+            checkpoint_path = os.path.join(MODELS_DL_DIR, f"best_{m}_raw.pth")
+            status[m] = os.path.exists(checkpoint_path)
+        return status
 
     @staticmethod
     def compute_spectrogram(signal: np.ndarray, nperseg: int = 64, noverlap: int = 32) -> np.ndarray:
