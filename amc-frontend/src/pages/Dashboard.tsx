@@ -230,17 +230,17 @@ export const Dashboard: React.FC = () => {
 
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Paper variant="outlined" sx={{ p: 2.5, textAlign: 'left', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 0.5 }}>
                   Supported Models: <Box component="span" color="primary.main" sx={{ fontWeight: 800 }}>{totalModelsCount}</Box>
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 1 }}>
                   Currently Loaded: <Box component="span" color="primary.main" sx={{ fontWeight: 800 }}>{numModelsLoaded}</Box>
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  ML Loaded: {numMlModelsLoaded}/7
+                  ML Loaded: <Box component="span" color="primary.main" sx={{ fontWeight: 700 }}>{numMlModelsLoaded}/7</Box>
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                  DL Loaded: {numDlModelsLoaded}/3 (Lazy Loaded)
+                  DL Loaded: <Box component="span" color="primary.main" sx={{ fontWeight: 700 }}>{numDlModelsLoaded}/3 (Lazy Loaded)</Box>
                 </Typography>
               </Paper>
             </Grid>
