@@ -79,15 +79,11 @@ export const AmcPredictor: React.FC = () => {
         ]);
       }
 
+      setAvailableDLModels(["cnn1d", "cnnlstm", "cnn2d"]);
       try {
-        const dlHealth = await amcApi.getHealthDL();
-        const dlModels = Object.keys(dlHealth.models_loaded).filter(
-          (k) => dlHealth.models_loaded[k],
-        );
-        setAvailableDLModels(dlModels);
+        await amcApi.getHealthDL();
       } catch (err) {
         console.warn("Failed to load health status of DL models", err);
-        setAvailableDLModels(["cnn1d", "cnnlstm", "cnn2d"]);
       }
     };
     fetchHealth();
