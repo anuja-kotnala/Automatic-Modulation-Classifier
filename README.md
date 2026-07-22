@@ -2,11 +2,11 @@
 
 An end-to-end, research-grade, object-oriented framework for simulating complex baseband signals, applying realistic wireless channel impairments, extracting statistical & spectral features, training machine learning/deep learning modulation classifiers, and visualizing spectrum dynamics in an interactive dashboard.
 
-## 📺 Demonstration Video
 
-Here is a short demonstration walkthrough showing the application features, real-time AMC predictions, model training phases, and evaluation results.
 
-<video src="docs/demo.mp4" controls width="100%"></video>
+## 📺 Demo
+
+[Watch the demo](docs/demo.mp4)
 
 ---
 
@@ -62,12 +62,13 @@ d:/ODIN/AMC/
 ```
 
 ---
+## Deployments:
+
+### Frontend: https://automatic-modulation-classifier.vercel.app/
+
+### Backend: https://amc-backend-ilfa.onrender.com/
 
 ## 🚀 Setup & Execution
-
-### Deployed frontend: https://automatic-modulation-classifier.vercel.app/
-
-### Deployed backend: https://amc-backend-ilfa.onrender.com/
 
 ### 1. Backend API (FastAPI)
 
