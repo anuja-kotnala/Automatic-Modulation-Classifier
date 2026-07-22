@@ -165,7 +165,7 @@ export const Dashboard: React.FC = () => {
     },
     {
       title: 'Phase 5: Deep Learning Inference',
-      status: numDlModelsLoaded > 0 ? 'Active' : 'Pending',
+      status: numDlModelsLoaded > 0 ? 'Complete' : 'Pending',
       statusColor: numDlModelsLoaded > 0 ? 'success' : 'warning',
       subtitle: 'Evaluate and run high-dimensional CNN/LSTM neural models',
       outputsCount: `${numDlModelsLoaded} / ${totalDlModelsCount} Models Ready`,

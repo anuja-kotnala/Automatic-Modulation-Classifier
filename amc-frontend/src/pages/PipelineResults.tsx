@@ -40,6 +40,25 @@ import AcademicHeader from '../components/Common/AcademicHeader';
 import LoadingSkeleton from '../components/Common/LoadingSkeleton';
 import EmptyState from '../components/Common/EmptyState';
 
+const TABLE_COLUMNS = [
+  { key: 'model_name', label: 'Model Name' },
+  { key: 'model_type', label: 'Model Type' },
+  { key: 'accuracy', label: 'Accuracy' },
+  { key: 'precision', label: 'Precision' },
+  { key: 'recall', label: 'Recall' },
+  { key: 'f1_score', label: 'F1 Score' },
+  { key: 'cv_mean', label: 'CV Mean' },
+  { key: 'cv_std', label: 'CV Std' },
+  { key: 'macro_auc', label: 'Macro AUC' },
+  { key: 'parameters', label: 'Parameters' },
+  { key: 'training_time', label: 'Training Time (s)' },
+  { key: 'avg_epoch_time', label: 'Avg Epoch Time (s)' },
+  { key: 'model_size_mb', label: 'Model Size (MB)' },
+  { key: 'best_val_accuracy', label: 'Best Val Acc' },
+  { key: 'best_val_loss', label: 'Best Val Loss' },
+  { key: 'inference_time_ms', label: 'Inference Time (ms)' },
+];
+
 export const PipelineResults: React.FC = () => {
   const location = useLocation();
   const initialTab = location.state && typeof location.state.tab === 'number' ? location.state.tab : 0;
@@ -370,34 +389,48 @@ export const PipelineResults: React.FC = () => {
                     <TableIcon color="primary" /> Classifiers Accuracy Table
                   </Typography>
                   {mlSummary.length > 0 ? (
-                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-                      <Table>
-                        <TableHead sx={{ bgcolor: 'background.default' }}>
-                          <TableRow>
-                            {Object.keys(mlSummary[0])
-                              .filter((k) => k !== 'model' && k !== 'Classifier' && k !== 'snr_accuracy' && typeof mlSummary[0][k] !== 'object')
-                              .map((k) => (
-                                <TableCell key={k} sx={{ fontWeight: 'bold' }}>
-                                  {k.replace('_', ' ')}
-                                </TableCell>
-                              ))}
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {mlSummary.map((row, idx) => (
-                            <TableRow key={idx} hover>
-                              {Object.entries(row)
-                                .filter(([k, v]) => k !== 'model' && k !== 'Classifier' && k !== 'snr_accuracy' && typeof v !== 'object')
-                                .map(([k, v]) => (
-                                  <TableCell key={k}>
-                                    {typeof v === 'number' ? v.toFixed(4) : String(v)}
+                    (() => {
+                      const activeColumns = TABLE_COLUMNS.filter((col) =>
+                        mlSummary.some((row) => row[col.key] !== undefined && row[col.key] !== null)
+                      );
+                      return (
+                        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                          <Table>
+                            <TableHead sx={{ bgcolor: 'background.default' }}>
+                              <TableRow>
+                                {activeColumns.map((col) => (
+                                  <TableCell key={col.key} sx={{ fontWeight: 'bold' }}>
+                                    {col.label}
                                   </TableCell>
                                 ))}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {mlSummary.map((row, idx) => (
+                                <TableRow key={idx} hover>
+                                  {activeColumns.map((col) => {
+                                    const val = row[col.key];
+                                    return (
+                                      <TableCell key={col.key}>
+                                        {val === undefined || val === null
+                                          ? '-'
+                                          : col.key === 'model_type'
+                                          ? String(val).toUpperCase()
+                                          : col.key === 'parameters'
+                                          ? typeof val === 'number' ? val.toLocaleString() : String(val)
+                                          : typeof val === 'number'
+                                          ? val.toFixed(4)
+                                          : String(val)}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      );
+                    })()
                   ) : (
                     <EmptyState
                       title="Accuracy Table Missing"

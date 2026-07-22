@@ -30,6 +30,25 @@ import AcademicHeader from '../components/Common/AcademicHeader';
 import LoadingSkeleton from '../components/Common/LoadingSkeleton';
 import EmptyState from '../components/Common/EmptyState';
 
+const TABLE_COLUMNS = [
+  { key: 'model_name', label: 'Model Name' },
+  { key: 'model_type', label: 'Model Type' },
+  { key: 'accuracy', label: 'Accuracy' },
+  { key: 'precision', label: 'Precision' },
+  { key: 'recall', label: 'Recall' },
+  { key: 'f1_score', label: 'F1 Score' },
+  { key: 'cv_mean', label: 'CV Mean' },
+  { key: 'cv_std', label: 'CV Std' },
+  { key: 'macro_auc', label: 'Macro AUC' },
+  { key: 'parameters', label: 'Parameters' },
+  { key: 'training_time', label: 'Training Time (s)' },
+  { key: 'avg_epoch_time', label: 'Avg Epoch Time (s)' },
+  { key: 'model_size_mb', label: 'Model Size (MB)' },
+  { key: 'best_val_accuracy', label: 'Best Val Acc' },
+  { key: 'best_val_loss', label: 'Best Val Loss' },
+  { key: 'inference_time_ms', label: 'Inference Time (ms)' },
+];
+
 export const ModelPerformance: React.FC = () => {
   const location = useLocation();
   const initialTab = location.state && typeof location.state.tab === 'number' ? location.state.tab : 0;
@@ -257,39 +276,51 @@ export const ModelPerformance: React.FC = () => {
                       <TableIcon color="primary" /> Metrics Summary (model_performance_summary.csv)
                     </Typography>
 
-                    {results?.summary && results.summary.length > 0 ? (
-                      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-                        <Table size="small">
-                          <TableHead sx={{ bgcolor: 'background.default' }}>
-                            <TableRow>
-                              {Object.keys(results.summary[0])
-                                .filter((key) => key !== 'model' && key !== 'Classifier' && key !== 'snr_accuracy' && typeof results.summary[0][key] !== 'object')
-                                .map((key) => (
-                                  <TableCell key={key} sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}>
-                                    {key.replace('_', ' ')}
-                                  </TableCell>
-                                ))}
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {results.summary.map((row, rIndex) => (
-                              <TableRow key={rIndex} hover>
-                                {Object.entries(row)
-                                  .filter(([key, val]) => key !== 'model' && key !== 'Classifier' && key !== 'snr_accuracy' && typeof val !== 'object')
-                                  .map(([key, val]: any) => (
-                                    <TableCell key={key}>
-                                      {typeof val === 'number'
-                                        ? val.toFixed(4)
-                                        : typeof val === 'string' && !isNaN(Number(val))
-                                        ? parseFloat(val).toFixed(4)
-                                        : val}
+                     {results?.summary && results.summary.length > 0 ? (
+                      (() => {
+                        const activeColumns = TABLE_COLUMNS.filter((col) =>
+                          results.summary.some((row) => row[col.key] !== undefined && row[col.key] !== null)
+                        );
+                        return (
+                          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                            <Table size="small">
+                              <TableHead sx={{ bgcolor: 'background.default' }}>
+                                <TableRow>
+                                  {activeColumns.map((col) => (
+                                    <TableCell key={col.key} sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}>
+                                      {col.label}
                                     </TableCell>
                                   ))}
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {results.summary.map((row, rIndex) => (
+                                  <TableRow key={rIndex} hover>
+                                    {activeColumns.map((col) => {
+                                      const val = row[col.key];
+                                      return (
+                                        <TableCell key={col.key}>
+                                          {val === undefined || val === null
+                                            ? '-'
+                                            : col.key === 'model_type'
+                                            ? String(val).toUpperCase()
+                                            : col.key === 'parameters'
+                                            ? typeof val === 'number' ? val.toLocaleString() : String(val)
+                                            : typeof val === 'number'
+                                            ? val.toFixed(4)
+                                            : typeof val === 'string' && !isNaN(Number(val))
+                                            ? parseFloat(val).toFixed(4)
+                                            : String(val)}
+                                        </TableCell>
+                                      );
+                                    })}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        );
+                      })()
                     ) : (
                       <EmptyState
                         title="Summary Table Unavailable"
