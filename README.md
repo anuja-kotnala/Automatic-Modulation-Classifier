@@ -2,33 +2,32 @@
 
 An end-to-end, research-grade, object-oriented framework for simulating complex baseband signals, applying realistic wireless channel impairments, extracting statistical & spectral features, training machine learning/deep learning modulation classifiers, and visualizing spectrum dynamics in an interactive dashboard.
 
-
-
 ## 📺 Demo
 
-[Watch the demo](docs/demo.mp4)
+![Prediction Demo ](docs/prediction.gif)  
+[Full Demo ](docs/demo.mp4)
 
 ---
 
 ## 🌟 Key Features
 
 1. **Baseband Signal Simulation:** High-fidelity waveform generators supporting:
-   * **Analog Modulation:** AM, FM
-   * **Digital Single-Carrier:** BPSK, QPSK, 16QAM, 64QAM
-   * **Multi-Carrier:** OFDM (Orthogonal Frequency Division Multiplexing)
+   - **Analog Modulation:** AM, FM
+   - **Digital Single-Carrier:** BPSK, QPSK, 16QAM, 64QAM
+   - **Multi-Carrier:** OFDM (Orthogonal Frequency Division Multiplexing)
 2. **Impairing Channel Emulator:** Realistic channel impairments including:
-   * Additive White Gaussian Noise (AWGN)
-   * Fading Channels (Rayleigh, Rician multipath propagation)
-   * Carrier Frequency Offset (CFO) & Phase Noise
-   * IQ Amplitude & Phase Imbalance
-   * Timing offsets, multipath delays, and clock drifts
+   - Additive White Gaussian Noise (AWGN)
+   - Fading Channels (Rayleigh, Rician multipath propagation)
+   - Carrier Frequency Offset (CFO) & Phase Noise
+   - IQ Amplitude & Phase Imbalance
+   - Timing offsets, multipath delays, and clock drifts
 3. **Statistical & Spectral Feature Extraction:** Automatic compilation of 39 distinct statistical features (moments, cumulants, envelope features, wavelet energy levels, and PSD statistics) for classical classification.
 4. **Machine Learning Classifiers:** Classical models (Random Forest, SVM, LightGBM, XGBoost, etc.) trained, cross-validated, and serialized for real-time inference.
 5. **Deep Learning Architectures:** Raw IQ classification models using PyTorch, including 1D CNNs, CNN-LSTMs, and 2D CNN (spectrogram) architectures.
 6. **Unified Web Dashboard:** Modern dashboard (Vite + React + Material-UI) showing:
-   * Pipeline steps (Dataset Generation ➔ Feature Extraction ➔ Ranking ➔ ML/DL Classification)
-   * Live AMC Predictor (interactive signal generation, impairment addition, and instant ML/DL classification)
-   * Model Performance analytics & confusion matrices
+   - Pipeline steps (Dataset Generation ➔ Feature Extraction ➔ Ranking ➔ ML/DL Classification)
+   - Live AMC Predictor (interactive signal generation, impairment addition, and instant ML/DL classification)
+   - Model Performance analytics & confusion matrices
 
 ---
 
@@ -62,6 +61,7 @@ d:/ODIN/AMC/
 ```
 
 ---
+
 ## Deployments:
 
 ### Frontend: https://automatic-modulation-classifier.vercel.app/
@@ -93,7 +93,7 @@ Ensure you have Python 3.10+ installed.
    ```bash
    python app.py
    ```
-   *The server runs locally by default on `http://localhost:8000`.*
+   _The server runs locally by default on `http://localhost:8000`._
 
 ### 2. Frontend Interface (Vite + React)
 
@@ -111,13 +111,14 @@ Ensure you have Node.js (v18+) installed.
    ```bash
    npm run dev
    ```
-   *Access the web app at `http://localhost:5173`.*
+   _Access the web app at `http://localhost:5173`._
 
 ---
 
 ## 📊 Evaluation & Metrics
 
 The system saves comprehensive figures and summaries under `amc-backend/results/`:
+
 - **Feature Importance:** Heatmaps showing Pearson/Spearman feature correlations.
 - **ML Performance:** Accuracy, Precision, Recall, F1 scores, Cross-validation scores, and Confusion Matrices.
 - **DL Performance:** Loss/accuracy curves and SNR-specific performance profiles.
