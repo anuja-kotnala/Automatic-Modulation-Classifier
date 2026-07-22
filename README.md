@@ -65,6 +65,10 @@ d:/ODIN/AMC/
 
 ## 🚀 Setup & Execution
 
+### Deployed frontend: https://automatic-modulation-classifier.vercel.app/
+
+### Deployed backend: https://amc-backend-ilfa.onrender.com/
+
 ### 1. Backend API (FastAPI)
 
 Ensure you have Python 3.10+ installed.
